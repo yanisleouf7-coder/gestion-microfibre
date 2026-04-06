@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microfibre Pro | Expert Stock</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #2ecc71;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #ecf0f1;
+            color: var(--dark);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #4ca1af);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: -20px auto 40px;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .menu-btn {
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Stats Cards pour le Rapport */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .bg-blue { background: var(--accent); }
+        .bg-green { background: var(--success); }
+        .bg-orange { background: var(--warning); }
+
+        .stat-card h4 { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+        .stat-card p { margin: 10px 0 0; font-size: 1.8rem; font-weight: bold; }
+
+        /* Tableaux */
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .stock-table th, .stock-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-stock { background: #dff9fb; color: #0984e3; }
+        .badge-prod { background: #fff4e6; color: #d35400; }
+        .badge-empty { background: #ffeef0; color: #d63031; }
+
+        .form-container { max-width: 500px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .btn-submit { background: var(--success); color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏭 Microfibre Pro</h1>
+        <p>Gestion de Stock & Analyse de Production</p>
+    </header>
+
+    <div class="container">
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="afficherSection('Nouveau')">➕ Nouveau</button>
+            <button class="menu-btn" onclick="afficherSection('Stock')">📦 Stock</button>
+            <button class="menu-btn" onclick="afficherSection('Production')">⚙️ Production</button>
+            <button class="menu-btn" onclick="afficherSection('Rapport')">📊 Rapports</button>
+        </div>
+
+        <div id="content-area"></div>
+    </div>
+
+    <script>
+        let stock = JSON.parse(localStorage.getItem('stock_microfibre')) || [];
+
+        function saveStock() {
+            localStorage.setItem('stock_microfibre', JSON.stringify(stock));
+        }
+
+        function afficherSection(section) {
+            const content = document.getElementById('content-area');
+            
+            if(section === 'Nouveau') {
+                content.innerHTML = `
+                    <h3>Entrée de matière</h3>
+                    <div class="form-container">
+                        <div class="form-group"><label>Référence Rouleau :</label><input type="text" id="ref" placeholder="Ex: R-202"></div>
+                        <div class="form-group"><label>Poids (kg) :</label><input type="number" id="poids" step="0.1"></div>
+                        <button class="btn-submit" onclick="ajouterRouleau()">Enregistrer</button>
+                    </div>`;
+            } 
+            else if(section === 'Stock') {
+                let html = `<h3>Inventaire Temps Réel</h3><table class="stock-table"><thead><tr><th>Référence</th><th>Poids</th><th>État</th><th>Date</th></tr></thead><tbody>`;
+                stock.forEach(item => {
+                    let badgeClass = item.poids <= 0 ? 'badge-empty' : (item.statut === 'En cours' ? 'badge-prod' : 'badge-stock');
+                    html += `<tr><td><b>${item.ref}</b></td><td>${item.poids} kg</td><td><span class="badge ${badgeClass}">${item.statut}</span></td><td>${item.date}</td></tr>`;
+                });
+                content.innerHTML = html + `</tbody></table>`;
+            }
+            else if(section === 'Production') {
+                const options = stock.filter(r => r.poids > 0).map(r => `<option value="${r.ref}">${r.ref} (${r.poids} kg)</option>`).join('');
+                content.innerHTML = `
+                    <h3>Sortie de Production</h3>
+                    <div class="form-container">
+                        <div class="form-group"><label>Rouleau à utiliser :</label><select id="prod-ref">${options || '<option disabled>Stock épuisé</option>'}</select></div>
+                        <div class="form-group"><label>Poids consommé (kg) :</label><input type="number" id="prod-conso" step="0.01"></div>
+                        <button class="btn-submit" onclick="validerProduction()" style="background:var(--primary)">Valider la sortie</button>
+                    </div>`;
+            }
+            else if(section === 'Rapport') {
+                genererRapport(content);
+            }
+        }
+
+        function genererRapport(container) {
+            // Calculs pour le rapport
+            const totalStock = stock.reduce((sum, item) => sum + parseFloat(item.poids), 0).toFixed(2);
+            const nbRouleauxActifs = stock.filter(item => item.poids > 0).length;
+            const nbTermines = stock.filter(item => item.poids <= 0).length;
+
+            container.innerHTML = `
+                <h3>Tableau de Bord Analytique</h3>
+                <div class="stats-grid">
+                    <div class="stat-card bg-blue"><h4>Matière Totale</h4><p>${totalStock} kg</p></div>
+                    <div class="stat-card bg-green"><h4>Rouleaux Actifs</h4><p>${nbRouleauxActifs}</p></div>
+                    <div class="stat-card bg-orange"><h4>Rouleaux Finis</h4><p>${nbTermines}</p></div>
+                </div>
+                
+                <h4>Détails de consommation par rouleau</h4>
+                <table class="stock-table">
+                    <thead><tr><th>Référence</th><th>Poids Restant</th><th>Utilisation</th></tr></thead>
+                    <tbody>
+                        ${stock.map(item => {
+                            let initPoids = 100; // Ici on pourrait stocker le poids initial réel pour faire un %
+                            return `<tr><td>${item.ref}</td><td>${item.poids} kg</td><td>${item.statut}</td></tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <button onclick="effacerDonnees()" style="margin-top:20px; color:red; border:none; background:none; cursor:pointer; font-size:12px;">⚠️ Réinitialiser toutes les données</button>
+            `;
+        }
+
+        function ajouterRouleau() {
+            const ref = document.getElementById('ref').value;
+            const poids = document.getElementById('poids').value;
+            if(!ref || !poids) return alert("Champs vides !");
+            stock.push({ ref, poids: parseFloat(poids).toFixed(2), statut: 'Disponible', date: new Date().toLocaleDateString('fr-FR') });
+            saveStock();
+            afficherSection('Stock');
+        }
+
+        function validerProduction() {
+            const ref = document.getElementById('prod-ref').value;
+            const conso = parseFloat(document.getElementById('prod-conso').value);
+            const index = stock.findIndex(i => i.ref === ref);
+            
+            if(index !== -1 && conso <= stock[index].poids) {
+                stock[index].poids = (stock[index].poids - conso).toFixed(2);
+                stock[index].statut = stock[index].poids <= 0 ? 'Terminé' : 'En cours';
+                saveStock();
+                alert("Stock mis à jour !");
+                afficherSection('Rapport');
+            } else {
+                alert("Erreur de saisie ou stock insuffisant !");
+            }
+        }
+
+        function effacerDonnees() {
+            if(confirm("Voulez-vous vraiment TOUT effacer ?")) {
+                localStorage.clear();
+                stock = [];
+                afficherSection('Stock');
+            }
+        }
+
+        afficherSection('Stock');
+    </script>
+</body>
+</html>
